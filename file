@@ -1,0 +1,108 @@
+
+Notes/
+├── cmd/
+│   └── main.go
+├── handler/
+│   └── handlers.go
+├── routes/
+│   └── routes.go
+└── models/
+    └── models.go
+
+package models
+
+// Note struct to represent a single note
+type Note struct {
+    ID      int    `json:"id"`
+    Title   string `json:"title"`
+    Content string `json:"content"`
+}
+
+// Notes slice to store multiple notes
+var Notes []Note
+
+b. handler/handlers.go:
+
+go
+Copy code
+package handler
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+
+    "notes/models"
+)
+
+// AddNoteHandler to add a new note
+func AddNoteHandler(w http.ResponseWriter, r *http.Request) {
+    // Parse JSON request body
+    var newNote models.Note
+    err := json.NewDecoder(r.Body).Decode(&newNote)
+    if err != nil {
+        http.Error(w, "Failed to parse request body", http.StatusBadRequest)
+        return
+    }
+
+    // Generate ID for the new note
+    newNote.ID = len(models.Notes) + 1
+
+    // Add the new note to the slice
+    models.Notes = append(models.Notes, newNote)
+
+    // Respond with success message
+    w.WriteHeader(http.StatusCreated)
+    fmt.Fprintf(w, "Note added successfully")
+}
+
+// GetAllNotesHandler to get all notes
+func GetAllNotesHandler(w http.ResponseWriter, r *http.Request) {
+    // Convert notes slice to JSON
+    notesJSON, err := json.Marshal(models.Notes)
+    if err != nil {
+        http.Error(w, "Failed to marshal notes to JSON", http.StatusInternalServerError)
+        return
+    }
+
+    // Respond with JSON data
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusOK)
+    w.Write(notesJSON)
+}
+c. routes/routes.go:
+
+go
+Copy code
+package routes
+
+    import (
+    "net/http"
+
+    "notes/handler"
+)
+
+// SetupRoutes to configure API endpoints
+func SetupRoutes() {
+        http.HandleFunc("/addNote", handler.AddNoteHandler)
+    http.HandleFunc("/getAllNotes", handler.GetAllNotesHandler)
+}
+d. cmd/main.go:
+
+go
+Copy code
+package main
+
+import (
+    "net/http"
+
+    "notes/routes"
+)
+
+func main() {
+    // Setup API routes
+    routes.SetupRoutes()
+
+    // Start the server
+    http.ListenAndServe(":8080", nil)
+}
