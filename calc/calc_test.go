@@ -1,6 +1,10 @@
 package calc
 
-import "testing"
+import (
+	"os"
+	"runtime/pprof"
+	"testing"
+)
 
 // func TestSum(t *testing.T) {
 // 	type args struct {
@@ -49,9 +53,15 @@ import "testing"
 func BenchmarkCountVowels(b *testing.B) {
 	s := GenerateStr(1000)
 
+	// pprof.WriteHeapProfile(memProfile)
+
 	for i := 0; i < b.N; i++ {
 		CountVowels(s)
 	}
+	memProfile, _ := os.Create("memprofile.out")
+	defer memProfile.Close()
+
+	pprof.WriteHeapProfile(memProfile)
 }
 
 func BenchmarkCountVowelsOPT(b *testing.B) {
